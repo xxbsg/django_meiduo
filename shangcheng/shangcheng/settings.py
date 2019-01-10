@@ -39,8 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'yonghu.apps.YonghuConfig',
+    'oauth.apps.OauthConfig',
     'rest_framework',
-    'corsheaders',
+    'corsheaders',#跨域
 
 ]
 
@@ -231,6 +232,8 @@ ALLOWED_HOSTS = ['127.0.0.1','api.meiduo.site']
 AUTHENTICATION_BACKENDS = [
    'gonggong.users.UsernameMobleModelBackend',
 ]
-
-
+# qq登录所用数据
+QQ_CLIENT_ID = '101474184'
+QQ_CLIENT_SECRET = 'c6ce949e04e12ecc909ae6a8b09b637c'
+QQ_REDIRECT_URI = 'http://www.meiduo.site:8080/oauth_callback.html'
 
