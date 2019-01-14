@@ -11,5 +11,5 @@ app=Celery(main='celery_tasks') #参数 main脚本名称 为包名 实际要求�
 # 加载配置文件
 app.config_from_object('celery_tasks.config')
 #自动加载任务
-app.autodiscover_tasks(['celery_tasks.duanxin'])
+app.autodiscover_tasks(['celery_tasks.duanxin','celery_tasks.youxiang'])
 

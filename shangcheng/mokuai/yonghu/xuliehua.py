@@ -1,9 +1,14 @@
+import re
+
+from django.core.mail import send_mail
 from rest_framework import serializers
 from django_redis import get_redis_connection
 from rest_framework_jwt.settings import api_settings
 
+from celery_tasks.youxiang.tasks import fsyx
+from shangcheng import settings
 from yonghu.models import Yhb
-
+from yonghu.yh_gg import  generic_verify_url
 
 class YhbXlh(serializers.ModelSerializer):
     '''
@@ -21,10 +26,12 @@ class YhbXlh(serializers.ModelSerializer):
     token=serializers.CharField(read_only=True)
     class Meta:
         model=Yhb
-        fields =['username','password','mobile','password2','sms_code','allow','id','token']
+        fields =['username','password','mobile','password2','sms_code','allow','id','token','email','is_active']
         # 返回数据时不能返回密码,但需要返回id 所以重写id password字段
         extra_kwargs = {
             'id': {'read_only': True},
+            'email': {'required': False,'read_only': True},
+            'e_active':{'required': False,'read_only': True},
             'username': {
                 'min_length': 5,
                 'max_length': 20,
@@ -50,6 +57,7 @@ class YhbXlh(serializers.ModelSerializer):
         password2=attrs.get('password2')
         sms_code=attrs.get('sms_code')
         allow=attrs.get('allow')
+
         if not all([username,password,mobile,password2,sms_code,allow]):
             raise serializers.ValidationError('数据不能为空')
         if password2!=password:
@@ -78,6 +86,35 @@ class YhbXlh(serializers.ModelSerializer):
         payload = jwt_payload_handler(instance)
         token = jwt_encode_handler(payload)
         instance.token = token
+        return instance
+
+class EmailsXlh(serializers.ModelSerializer):
+    class Meta:
+        model=Yhb
+        fields=['id','email']
+        extra_kwargs={'email':{'required':True},}
+    def validate(self, attrs):
+        if not re.match(r'^[A-Za-z\d]+([-_.][A-Za-z\d]+)*@([A-Za-z\d]+[-.])+[A-Za-z\d]{2,4}$',attrs.get('email')):
+            return serializers.ValidationError('邮箱格式不正确')
+        return attrs
+    def update(self, instance, validated_data):
+        instance.email=validated_data.get('email')
+        instance.save()
+        # 发送邮件
+
+        url=generic_verify_url(instance.id)
+        '''
+        send_mail(subject,message,from_email,recipient_list,html_message=None)
+
+        subject 邮件标题
+        message 普通邮件正文， 普通字符串
+        from_email 发件人
+        recipient_list 收件人列表
+        html_message 多媒体邮件正文，可以是html字符串
+        '''
+        # msg = '<a href="http://www.itcast.cn/subject/pythonzly/index.shtml" target="_blank">点击激活</a>'
+        # send_mail('注册激活', '', settings.EMAIL_FROM, ['qq1102746402@163.com'], html_message=msg)
+        fsyx.delay(instance.email,url)
         return instance
 
 
