@@ -20,5 +20,11 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^users/', include('yonghu.urls', namespace='yonghu')),
     url(r'^verifications/',include('yanzheng.urls',namespace='yanzheng')),
-    url(r'oauth/',include('oauth.urls',namespace='oauth'))
+    url(r'oauth/',include('oauth.urls',namespace='oauth')),
+    url(r'areas/',include('areas.urls',namespace='areas')),
+    url(r'^ckeditor/', include('ckeditor_uploader.urls')),
+    url(r'^goods/',include('goods.urls',namespace='goods')),
+    url(r'^cart/',include('cart.urls',namespace='cart')),
+    url(r'^orders/',include('orders.urls',namespace='orders')),
+    url(r"^pay/",include('pay.urls',namespace='pay'))
 ]

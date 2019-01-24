@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render
+from django_redis import get_redis_connection
 # Create your views here.
 # def cs(requ):
 #     from django.db import DatabaseError
@@ -11,9 +12,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cart.cart_gg import hebing
 from disanfang.captcha.captcha import captcha
-from yonghu.models import Yhb
-from yonghu.xuliehua import YhbXlh, EmailsXlh
+from goods.models import SKU
+from goods.xuliehua import HotSKUListSerializer
+from yonghu.models import Yhb, Address
+from yonghu.xuliehua import YhbXlh, EmailsXlh, YhLlXlh, addressxlh
 from yonghu.yh_gg import  check_token
 
 
@@ -67,9 +71,45 @@ class E_active(APIView):
         user.save()
         return Response({'msg':'ok'})
 
+"""浏览历史
+记录用户浏览的商品
+
+"""
+class YhLl(CreateAPIView):
+    serializer_class = YhLlXlh
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        yhid=request.user
+        r_c=get_redis_connection('yhlljl')
+        skus=r_c.lrange('history_%s'%yhid,0,-1)
+        sku=[]
+        for f in skus:
+            a=SKU.objects.get(id=f)
+            sku.append(a)
+        s=HotSKUListSerializer(sku,many=True)
+        return Response(s.data)
+
+from rest_framework_jwt.views import ObtainJSONWebToken
+
+class MergeLoginAPIView(ObtainJSONWebToken):
 
 
+    def post(self, request, *args, **kwargs):
+        # 调用jwt扩展的方法，对用户登录的数据进行验证
+        response = super().post(request)
 
+        # 如果用户登录成功，进行购物车数据合并
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            # 表示用户登录成功
+            user = serializer.validated_data.get("user")
+            # 合并购物车
+            # merge_cart_cookie_to_redis(request, user, response)
+            response = hebing(request, user, response)
 
-
-
+        return response
+class address(APIView):
+    def get(self,requ):
+        ads=Address.objects.all()
+        s=addressxlh(ads,many=True)
+        return Response({'addresses':s.data,'default_address_id':1})

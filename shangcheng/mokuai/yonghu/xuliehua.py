@@ -7,7 +7,7 @@ from rest_framework_jwt.settings import api_settings
 
 from celery_tasks.youxiang.tasks import fsyx
 from shangcheng import settings
-from yonghu.models import Yhb
+from yonghu.models import Yhb, Address
 from yonghu.yh_gg import  generic_verify_url
 
 class YhbXlh(serializers.ModelSerializer):
@@ -26,7 +26,7 @@ class YhbXlh(serializers.ModelSerializer):
     token=serializers.CharField(read_only=True)
     class Meta:
         model=Yhb
-        fields =['username','password','mobile','password2','sms_code','allow','id','token','email','is_active']
+        fields =['username','password','mobile','password2','sms_code','allow','id','token','email','e_active']
         # 返回数据时不能返回密码,但需要返回id 所以重写id password字段
         extra_kwargs = {
             'id': {'read_only': True},
@@ -117,5 +117,26 @@ class EmailsXlh(serializers.ModelSerializer):
         fsyx.delay(instance.email,url)
         return instance
 
+class YhLlXlh(serializers.Serializer):
+    sku_id=serializers.IntegerField(label='商品编号',min_value=1,required=True)
+    def validate(self, attrs):
+
+        return attrs
+    def create(self, validated_data):
+        yh_id = self.context.get('request')
+        yh_id=yh_id.user
+        sku_id=validated_data.get('sku_id')
+        r_c=get_redis_connection('yhlljl')
+        # 移除已经存在的本记录
+        r_c.lrem('history_%s' % yh_id, 0, sku_id)
+        # 添加新的记录
+        r_c.lpush('history_%s' % yh_id, sku_id)
+        # 保存最多5条记录
+        r_c.ltrim('history_%s' % yh_id, 0, 4)
+        return validated_data
+class addressxlh(serializers.ModelSerializer):
+    class Meta:
+        model=Address
+        exclude = ('user', 'is_deleted', 'create_time', 'update_time')
 
 

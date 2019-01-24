@@ -11,9 +11,13 @@ urlpatterns = [
     url(r'^infos/$',views.YhzxXx.as_view()),
     url(r"^emails/$",views.Emails.as_view()),
     url(r"^emails/verification/",views.E_active.as_view()),
+    url(r'^addresses/$',views.address.as_view()),
     # url(r'^auths/', obtain_jwt_token, name='auths'),
     #JWT扩展的登录视图，在收到用户名与密码时，
     # 也是调用Django的认证系统中提供的authenticate()来检查用户名与密码是否正确。
-    url(r'auths/', obtain_jwt_token, name='auths'),
+
+    url(r'^browerhistories/$',views.YhLl.as_view(),name='yhll'),
+    #url(r'auths/', obtain_jwt_token, name='auths'),
+    url(r'^auths/', views.MergeLoginAPIView.as_view()),
 
 ]
